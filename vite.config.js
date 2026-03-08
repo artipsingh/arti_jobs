@@ -1,0 +1,90 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
+
+const JOBS_FILE = resolve(process.cwd(), 'data/jobs.json')
+
+function readEnvKey(key) {
+  try {
+    const content = readFileSync(resolve(process.cwd(), '.env'), 'utf8')
+    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'))
+    return match ? match[1].trim() : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const apiKey = readEnvKey('VITE_ANTHROPIC_API_KEY')
+
+function anthropicProxyPlugin() {
+  return {
+    name: 'anthropic-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/anthropic/v1/messages', async (req, res) => {
+        const chunks = []
+        req.on('data', chunk => chunks.push(chunk))
+        req.on('end', async () => {
+          try {
+            const body = Buffer.concat(chunks)
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+              },
+              body,
+            })
+            const data = await response.json()
+            res.setHeader('Content-Type', 'application/json')
+            res.statusCode = response.status
+            res.end(JSON.stringify(data))
+          } catch (err) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: err.message }))
+          }
+        })
+      })
+    },
+  }
+}
+
+function jobsPlugin() {
+  return {
+    name: 'jobs-persistence',
+    configureServer(server) {
+      server.middlewares.use('/api/jobs', (req, res) => {
+        res.setHeader('Content-Type', 'application/json')
+
+        if (req.method === 'GET') {
+          try {
+            const data = existsSync(JOBS_FILE) ? readFileSync(JOBS_FILE, 'utf8') : '[]'
+            res.end(data)
+          } catch (err) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: err.message }))
+          }
+        } else if (req.method === 'POST') {
+          const chunks = []
+          req.on('data', chunk => chunks.push(chunk))
+          req.on('end', () => {
+            try {
+              const body = Buffer.concat(chunks).toString()
+              writeFileSync(JOBS_FILE, JSON.stringify(JSON.parse(body), null, 2))
+              res.end(JSON.stringify({ ok: true }))
+            } catch (err) {
+              res.statusCode = 500
+              res.end(JSON.stringify({ error: err.message }))
+            }
+          })
+        }
+      })
+    },
+  }
+}
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), anthropicProxyPlugin(), jobsPlugin()],
+})

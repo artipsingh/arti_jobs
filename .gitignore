@@ -21,6 +21,11 @@ data/initialJobs.js
 data/jobs.json
 *.csv
 
+# python
+tests/python/__pycache__/
+tests/python/venv/
+*.pyc
+
 
 
 # Editor directories and files

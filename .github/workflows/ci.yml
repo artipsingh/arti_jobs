@@ -35,7 +35,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install pytest
+        run: pip install pytest requests
 
       - name: Run pytest (unit tests only)
         run: pytest tests/python/ -v --ignore=tests/python/venv

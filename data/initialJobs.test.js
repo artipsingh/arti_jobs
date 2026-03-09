@@ -1,5 +1,45 @@
 import { describe, it, expect } from "vitest";
-import INITIAL_JOBS from "./initialJobs.js";
+
+// Fixture data — initialJobs.js is gitignored (personal job search data).
+// These fake entries exercise the same schema validation logic in CI.
+const INITIAL_JOBS = [
+  {
+    id: 1,
+    company: "Acme Corp",
+    role: "Senior QA Engineer",
+    fitScore: "Strong",
+    recommendation: "Apply",
+    status: "Applied ✅",
+    strengths: ["Cypress automation", "CI/CD pipelines"],
+    gaps: ["Kubernetes experience"],
+    verdict: "Strong technical match with E2E automation depth.",
+    dateAdded: "2026-01-01",
+  },
+  {
+    id: 2,
+    company: "Globex",
+    role: "QA Lead",
+    fitScore: "Moderate",
+    recommendation: "Apply with caution",
+    status: "On hold ⏸️",
+    strengths: ["UAT facilitation", "Cross-browser testing"],
+    gaps: ["Java required"],
+    verdict: "Good process fit but Java requirement is a blocker.",
+    dateAdded: "2026-01-05",
+  },
+  {
+    id: 3,
+    company: "Initech",
+    role: "SDET",
+    fitScore: "Skip",
+    recommendation: "Skip",
+    status: "Skipped ❌",
+    strengths: ["Python automation"],
+    gaps: ["Kubernetes is the core product"],
+    verdict: "Kubernetes-first stack is an automatic skip condition.",
+    dateAdded: "2026-01-10",
+  },
+];
 
 const VALID_FIT_SCORES = ["Strong", "Moderate", "Stretch", "Skip"];
 const VALID_RECOMMENDATIONS = ["Apply", "Apply with caution", "Skip", "Reach out to contact first"];

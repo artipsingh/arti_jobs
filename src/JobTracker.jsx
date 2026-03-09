@@ -153,11 +153,11 @@ export default function JobTracker() {
           <div style={{ fontSize: "10px", color: "#475569", marginTop: "2px" }}>job search tracker // march 2026</div>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button className={`btn-ghost ${view === "dashboard" ? "active" : ""}`} onClick={() => { setView("dashboard"); setSelectedJob(null); }}>dashboard</button>
-          <button className={`btn-ghost ${view === "evaluate" ? "active" : ""}`} onClick={() => { setView("evaluate"); setSelectedJob(null); }}>+ evaluate</button>
+          <button data-testid="nav-dashboard" className={`btn-ghost ${view === "dashboard" ? "active" : ""}`} onClick={() => { setView("dashboard"); setSelectedJob(null); }}>dashboard</button>
+          <button data-testid="nav-evaluate" className={`btn-ghost ${view === "evaluate" ? "active" : ""}`} onClick={() => { setView("evaluate"); setSelectedJob(null); }}>+ evaluate</button>
           <div style={{ width: "1px", height: "20px", background: "#1e2535", margin: "0 4px" }} />
-          <button className="btn-ghost" onClick={() => downloadCSV(jobs)} style={{ fontSize: "11px" }}>export csv</button>
-          <button className="btn-ghost" onClick={() => importRef.current.click()} style={{ fontSize: "11px" }}>import csv</button>
+          <button data-testid="btn-export-csv" className="btn-ghost" onClick={() => downloadCSV(jobs)} style={{ fontSize: "11px" }}>export csv</button>
+          <button data-testid="btn-import-csv" className="btn-ghost" onClick={() => importRef.current.click()} style={{ fontSize: "11px" }}>import csv</button>
           <input ref={importRef} type="file" accept=".csv" onChange={importCSV} style={{ display: "none" }} />
         </div>
       </div>
@@ -167,12 +167,12 @@ export default function JobTracker() {
         {/* Stats Bar */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
           {[
-            { label: "total roles", value: stats.total, color: "#6366f1" },
-            { label: "strong fit", value: stats.strong, color: "#10b981" },
-            { label: "applied", value: stats.applied, color: "#f59e0b" },
-            { label: "skipped", value: stats.skip, color: "#ef4444" },
+            { label: "total roles", value: stats.total, color: "#6366f1", testid: "stat-total" },
+            { label: "strong fit", value: stats.strong, color: "#10b981", testid: "stat-strong" },
+            { label: "applied", value: stats.applied, color: "#f59e0b", testid: "stat-applied" },
+            { label: "skipped", value: stats.skip, color: "#ef4444", testid: "stat-skipped" },
           ].map(s => (
-            <div key={s.label} className="card" style={{ padding: "20px 24px" }}>
+            <div key={s.label} data-testid={s.testid} className="card" style={{ padding: "20px 24px" }}>
               <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: "'Syne', sans-serif", color: s.color }}>{s.value}</div>
               <div style={{ fontSize: "10px", color: "#475569", marginTop: "4px", textTransform: "uppercase", letterSpacing: "1px" }}>{s.label}</div>
             </div>
@@ -182,7 +182,7 @@ export default function JobTracker() {
         {/* Dashboard View */}
         {view === "dashboard" && !selectedJob && (
           <div className="slide-in">
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div data-testid="job-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {jobs.map(job => (
                 <JobCard key={job.id} job={job} colors={colors} onSelect={setSelectedJob} onStatusChange={updateStatus} />
               ))}
@@ -210,6 +210,7 @@ export default function JobTracker() {
             </div>
 
             <textarea
+              data-testid="job-posting-input"
               value={posting}
               onChange={e => setPosting(e.target.value)}
               placeholder="paste job posting here..."
@@ -218,56 +219,56 @@ export default function JobTracker() {
             />
 
             <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
-              <button className="btn-primary" onClick={evaluatePosting} disabled={loading || !posting.trim()}>
+              <button data-testid="btn-evaluate" className="btn-primary" onClick={evaluatePosting} disabled={loading || !posting.trim()}>
                 {loading ? <span className="pulse">evaluating...</span> : "evaluate posting →"}
               </button>
-              {posting && <button className="btn-ghost" onClick={() => { setPosting(""); setEvaluationResult(null); setError(""); }}>clear</button>}
+              {posting && <button data-testid="btn-clear" className="btn-ghost" onClick={() => { setPosting(""); setEvaluationResult(null); setError(""); }}>clear</button>}
             </div>
 
             {error && (
-              <div style={{ background: "#1f0a0a", border: "1px solid #ef444430", borderRadius: "8px", padding: "16px", color: "#fca5a5", fontSize: "12px", marginBottom: "16px" }}>
+              <div data-testid="evaluate-error" style={{ background: "#1f0a0a", border: "1px solid #ef444430", borderRadius: "8px", padding: "16px", color: "#fca5a5", fontSize: "12px", marginBottom: "16px" }}>
                 {error}
               </div>
             )}
 
             {evaluationResult && (
-              <div className="card slide-in" style={{ padding: "28px" }}>
+              <div data-testid="evaluation-result" className="card slide-in" style={{ padding: "28px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                   <div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "20px", color: "#e2e8f0" }}>{evaluationResult.company}</div>
-                    <div style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>{evaluationResult.role}</div>
-                    <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{evaluationResult.salary}</div>
+                    <div data-testid="result-company" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "20px", color: "#e2e8f0" }}>{evaluationResult.company}</div>
+                    <div data-testid="result-role" style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>{evaluationResult.role}</div>
+                    <div data-testid="result-salary" style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{evaluationResult.salary}</div>
                   </div>
-                  <span className={`tag ${colors(evaluationResult.fitScore).bg} ${colors(evaluationResult.fitScore).text}`} style={{ fontSize: "13px", padding: "6px 14px" }}>
+                  <span data-testid="result-fit-score" className={`tag ${colors(evaluationResult.fitScore).bg} ${colors(evaluationResult.fitScore).text}`} style={{ fontSize: "13px", padding: "6px 14px" }}>
                     {evaluationResult.fitScore}
                   </span>
                 </div>
 
                 <div style={{ background: "#070709", borderRadius: "8px", padding: "14px", marginBottom: "20px", borderLeft: "3px solid #6366f1" }}>
                   <div style={{ fontSize: "10px", color: "#475569", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "1px" }}>verdict</div>
-                  <div style={{ fontSize: "13px", color: "#cbd5e1" }}>{evaluationResult.verdict}</div>
+                  <div data-testid="result-verdict" style={{ fontSize: "13px", color: "#cbd5e1" }}>{evaluationResult.verdict}</div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
-                  <div>
+                  <div data-testid="result-strengths">
                     <div style={{ fontSize: "10px", color: "#475569", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>✓ strengths</div>
                     {evaluationResult.strengths?.map((s, i) => (
-                      <div key={i} style={{ fontSize: "12px", color: "#86efac", padding: "3px 0" }}>+ {s}</div>
+                      <div key={i} data-testid="strength-item" style={{ fontSize: "12px", color: "#86efac", padding: "3px 0" }}>+ {s}</div>
                     ))}
                   </div>
-                  <div>
+                  <div data-testid="result-gaps">
                     <div style={{ fontSize: "10px", color: "#475569", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>✗ gaps</div>
                     {evaluationResult.gaps?.map((g, i) => (
-                      <div key={i} style={{ fontSize: "12px", color: "#fca5a5", padding: "3px 0" }}>— {g}</div>
+                      <div key={i} data-testid="gap-item" style={{ fontSize: "12px", color: "#fca5a5", padding: "3px 0" }}>— {g}</div>
                     ))}
                   </div>
                 </div>
 
-                <div style={{ fontSize: "11px", color: "#475569", marginBottom: "16px" }}>
+                <div data-testid="result-recommendation" style={{ fontSize: "11px", color: "#475569", marginBottom: "16px" }}>
                   recommendation: <span style={{ color: "#a5b4fc" }}>{evaluationResult.recommendation}</span>
                 </div>
 
-                <button className="btn-primary" onClick={addToTracker}>add to tracker →</button>
+                <button data-testid="btn-add-to-tracker" className="btn-primary" onClick={addToTracker}>add to tracker →</button>
               </div>
             )}
           </div>

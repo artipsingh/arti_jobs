@@ -87,4 +87,10 @@ function jobsPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), anthropicProxyPlugin(), jobsPlugin()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test-setup.js',
+    exclude: ['tests/e2e/**', 'node_modules/**'],
+  },
 })

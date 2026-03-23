@@ -1,56 +1,77 @@
 import { STATUS_OPTIONS } from "../constants.js";
+import "../styles/JobDetail.css";
 
 export function JobDetail({ job, colors, onBack, onStatusChange, onDelete }) {
   return (
     <div data-testid="job-detail" className="slide-in">
-      <button data-testid="btn-back" className="btn-ghost" style={{ marginBottom: "20px" }} onClick={onBack}>← back</button>
-      <div className="card" style={{ padding: "32px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+      <button data-testid="btn-back" className="btn-ghost job-detail-back" onClick={onBack}>← back</button>
+      <div className="card job-detail-card">
+        <div className="job-detail-header">
           <div>
-            <div data-testid="job-detail-company" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "22px", color: "#e2e8f0" }}>{job.company}</div>
-            <div data-testid="job-detail-role" style={{ fontSize: "14px", color: "#64748b", marginTop: "4px" }}>{job.role}</div>
-            <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{job.salary} · added {job.dateAdded}</div>
+            <div data-testid="job-detail-company" className="job-detail-company">{job.company}</div>
+            <div data-testid="job-detail-role" className="job-detail-role">{job.role}</div>
+            <div className="job-detail-meta">{job.salary} · added {job.dateAdded}</div>
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <span data-testid="job-detail-fit-score" className={`tag ${colors(job.fitScore).bg} ${colors(job.fitScore).text}`} style={{ fontSize: "12px", padding: "4px 12px" }}>
+          <div className="job-detail-actions">
+            <span data-testid="job-detail-fit-score" className={`tag job-detail-fit-score ${colors(job.fitScore).bg} ${colors(job.fitScore).text}`}>
               {job.fitScore}
             </span>
-            <button data-testid="btn-delete" className="btn-ghost" style={{ color: "#ef4444", borderColor: "#ef444430" }} onClick={() => onDelete(job.id)}>delete</button>
+            <button data-testid="btn-delete" className="btn-ghost btn-delete" onClick={() => onDelete(job.id)}>delete</button>
           </div>
         </div>
 
-        <div style={{ background: "#070709", borderRadius: "8px", padding: "16px", marginBottom: "24px", borderLeft: "3px solid #6366f1" }}>
-          <div style={{ fontSize: "10px", color: "#475569", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "1px" }}>verdict</div>
-          <div data-testid="job-detail-verdict" style={{ fontSize: "13px", color: "#cbd5e1" }}>{job.verdict}</div>
+        <div className="job-detail-verdict-box">
+          <div className="section-label">verdict</div>
+          <div data-testid="job-detail-verdict" className="job-detail-verdict-text">{job.verdict}</div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+        <div className="job-detail-grid">
           <div data-testid="job-detail-strengths">
-            <div style={{ fontSize: "10px", color: "#475569", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>✓ strengths</div>
+            <div className="job-detail-strengths-label">✓ strengths</div>
             {job.strengths?.map((s, i) => (
-              <div key={i} data-testid="strength-item" style={{ fontSize: "12px", color: "#86efac", padding: "4px 0", borderBottom: "1px solid #0f2010" }}>+ {s}</div>
+              <div key={i} data-testid="strength-item" className="strength-item">+ {s}</div>
             ))}
           </div>
           <div data-testid="job-detail-gaps">
-            <div style={{ fontSize: "10px", color: "#475569", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>✗ gaps</div>
+            <div className="job-detail-gaps-label">✗ gaps</div>
             {job.gaps?.map((g, i) => (
-              <div key={i} data-testid="gap-item" style={{ fontSize: "12px", color: "#fca5a5", padding: "4px 0", borderBottom: "1px solid #1f0f0f" }}>— {g}</div>
+              <div key={i} data-testid="gap-item" className="gap-item">— {g}</div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ fontSize: "10px", color: "#475569", textTransform: "uppercase", letterSpacing: "1px" }}>status</div>
+        <div className="job-detail-status-row">
+          <div className="job-detail-status-label">status</div>
           <select
             data-testid="job-detail-status"
             value={job.status}
             onChange={e => onStatusChange(job.id, e.target.value)}
-            style={{ fontSize: "13px", padding: "6px 12px" }}
+            className="job-detail-status-select"
           >
             {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <div data-testid="job-detail-recommendation" style={{ fontSize: "11px", color: "#475569" }}>recommendation: <span style={{ color: "#a5b4fc" }}>{job.recommendation}</span></div>
+          <div data-testid="job-detail-recommendation" className="job-detail-recommendation">recommendation: <span>{job.recommendation}</span></div>
         </div>
+
+        {job.statusHistory && job.statusHistory.length > 0 && (
+          <div data-testid="job-detail-history">
+            <div className="job-detail-history-label">audit trail</div>
+            <div className="history-timeline">
+              {job.statusHistory.map((entry, i) => (
+                <div key={i} className="history-entry">
+                  <div className="history-connector">
+                    <div className="history-dot" />
+                    {i < job.statusHistory.length - 1 && <div className="history-line" />}
+                  </div>
+                  <div className={`history-content${i < job.statusHistory.length - 1 ? "" : " last"}`}>
+                    <span className="history-status">{entry.status}</span>
+                    <span className="history-date">{entry.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

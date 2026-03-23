@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 
-const JOBS_FILE = resolve(process.cwd(), 'data/jobs.json')
+const JOBS_FILE = resolve(process.cwd(), process.env.TEST_JOBS_FILE || 'data/jobs.json')
 
 function readEnvKey(key) {
   try {

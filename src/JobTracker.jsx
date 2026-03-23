@@ -4,8 +4,9 @@ import { FIT_COLORS, STATUS_OPTIONS } from "./constants.js";
 import { evaluateJob } from "./api/evaluateJob.js";
 import { JobCard } from "./components/JobCard.jsx";
 import { JobDetail } from "./components/JobDetail.jsx";
-import { SYSTEM_PROMPT } from "./prompts/systemPrompt.js";
+import { buildSystemPrompt } from "./prompts/systemPrompt.js";
 import { downloadCSV, csvToJobs } from "./utils/csv.js";
+import "./styles/global.css";
 
 const STORAGE_KEY = "arti-jobs";
 
@@ -43,6 +44,8 @@ export default function JobTracker() {
   const [error, setError] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
   const [evaluationResult, setEvaluationResult] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterFit, setFilterFit] = useState("All");
 
   const stats = {
     total: jobs.length,
@@ -56,10 +59,10 @@ export default function JobTracker() {
     setError("");
     setEvaluationResult(null);
     try {
-      const result = await evaluateJob(posting, SYSTEM_PROMPT);
+      const result = await evaluateJob(posting, buildSystemPrompt());
       setEvaluationResult(result);
     } catch (err) {
-      setError("Evaluation failed. Check the posting and try again.");
+      setError(err.message || "Evaluation failed. Check the posting and try again.");
     } finally {
       setLoading(false);
     }
@@ -67,11 +70,13 @@ export default function JobTracker() {
 
   function addToTracker() {
     if (!evaluationResult) return;
+    const dateAdded = new Date().toISOString().split("T")[0];
     const newJob = {
       ...evaluationResult,
       id: Date.now(),
       status: "Considering 🤔",
-      dateAdded: new Date().toISOString().split("T")[0]
+      dateAdded,
+      statusHistory: [{ status: "Considering 🤔", date: dateAdded }],
     };
     setJobs(prev => [newJob, ...prev]);
     setEvaluationResult(null);
@@ -80,8 +85,31 @@ export default function JobTracker() {
   }
 
   function updateStatus(id, status) {
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, status } : j));
-    setSelectedJob(prev => prev?.id === id ? { ...prev, status } : prev);
+    const date = new Date().toISOString().split("T")[0];
+    const appendHistory = (j) => ({
+      ...j,
+      status,
+      statusHistory: [...(j.statusHistory || []), { status, date }],
+    });
+    setJobs(prev => prev.map(j => j.id === id ? appendHistory(j) : j));
+    setSelectedJob(prev => prev?.id === id ? appendHistory(prev) : prev);
+  }
+
+  function updateField(id, field, value) {
+    const updater = (j) => {
+      const updated = { ...j, [field]: value };
+      if (field === "appliedDate" && value) {
+        const alreadyLogged = (j.statusHistory || []).some(
+          e => e.status === "Applied ✅" && e.date === value
+        );
+        if (!alreadyLogged) {
+          updated.statusHistory = [...(j.statusHistory || []), { status: "Applied ✅", date: value }];
+        }
+      }
+      return updated;
+    };
+    setJobs(prev => prev.map(j => j.id === id ? updater(j) : j));
+    setSelectedJob(prev => prev?.id === id ? updater(prev) : prev);
   }
 
   function deleteJob(id) {
@@ -117,35 +145,16 @@ export default function JobTracker() {
 
   const colors = (score) => FIT_COLORS[score] || FIT_COLORS.Moderate;
 
+  const visibleJobs = jobs
+    .filter(j => filterStatus === "All" || j.status === filterStatus)
+    .filter(j => filterFit === "All" || j.fitScore === filterFit);
+
   return (
-    <div style={{ fontFamily: "'DM Mono', 'Courier New', monospace", background: "#0a0a0f", minHeight: "100vh", color: "#e2e8f0" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0a0a0f; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
-        .card { background: #0f1117; border: 1px solid #1e2535; border-radius: 12px; transition: all 0.2s ease; }
-        .card:hover { border-color: #2d3a52; }
-        .btn-primary { background: #6366f1; color: white; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 13px; transition: all 0.2s; }
-        .btn-primary:hover { background: #4f46e5; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #2d3a52; cursor: not-allowed; transform: none; }
-        .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #1e2535; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 13px; transition: all 0.2s; }
-        .btn-ghost:hover { border-color: #6366f1; color: #e2e8f0; }
-        .btn-ghost.active { border-color: #6366f1; color: #6366f1; background: #6366f115; }
-        textarea { background: #070709; border: 1px solid #1e2535; border-radius: 8px; color: #e2e8f0; padding: 16px; font-family: 'DM Mono', monospace; font-size: 12px; resize: vertical; width: 100%; outline: none; transition: border 0.2s; }
-        textarea:focus { border-color: #6366f1; }
-        select { background: #0f1117; border: 1px solid #1e2535; border-radius: 6px; color: #94a3b8; padding: 4px 8px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; outline: none; }
-        select:hover { border-color: #6366f1; }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .slide-in { animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; }
-      `}</style>
+    <div>
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid #1e2535", padding: "20px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ borderBottom: "1px solid #1e2535", padding: "20px 0" }}>
+        <div className="header-inner">
         <div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "20px", fontWeight: 800, color: "#e2e8f0", letterSpacing: "-0.5px" }}>
             <span style={{ color: "#6366f1" }}>arti</span>.jobs
@@ -160,12 +169,13 @@ export default function JobTracker() {
           <button data-testid="btn-import-csv" className="btn-ghost" onClick={() => importRef.current.click()} style={{ fontSize: "11px" }}>import csv</button>
           <input ref={importRef} type="file" accept=".csv" onChange={importCSV} style={{ display: "none" }} />
         </div>
+        </div>
       </div>
 
-      <div style={{ padding: "32px", maxWidth: "1100px", margin: "0 auto" }}>
+      <div className="page-container">
 
         {/* Stats Bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
+        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "32px" }}>
           {[
             { label: "total roles", value: stats.total, color: "#6366f1", testid: "stat-total" },
             { label: "strong fit", value: stats.strong, color: "#10b981", testid: "stat-strong" },
@@ -182,10 +192,45 @@ export default function JobTracker() {
         {/* Dashboard View */}
         {view === "dashboard" && !selectedJob && (
           <div className="slide-in">
-            <div data-testid="job-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {jobs.map(job => (
-                <JobCard key={job.id} job={job} colors={colors} onSelect={setSelectedJob} onStatusChange={updateStatus} />
-              ))}
+            {/* Filters */}
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "16px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "11px", color: "#475569" }}>filter by</span>
+              <select
+                data-testid="filter-status"
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                style={{ fontSize: "12px", padding: "6px 10px" }}
+              >
+                <option value="All">all statuses</option>
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select
+                data-testid="filter-fit"
+                value={filterFit}
+                onChange={e => setFilterFit(e.target.value)}
+                style={{ fontSize: "12px", padding: "6px 10px" }}
+              >
+                <option value="All">all recommendations</option>
+                {Object.keys(FIT_COLORS).map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+              {(filterStatus !== "All" || filterFit !== "All") && (
+                <button
+                  className="btn-ghost"
+                  style={{ fontSize: "11px", padding: "4px 10px", color: "#ef4444", borderColor: "#ef444430" }}
+                  onClick={() => { setFilterStatus("All"); setFilterFit("All"); }}
+                >clear</button>
+              )}
+              <span style={{ fontSize: "11px", color: "#475569", marginLeft: "auto" }}>
+                {visibleJobs.length} of {jobs.length} roles
+              </span>
+            </div>
+
+            <div className="job-list-scroll">
+              <div data-testid="job-list" style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "900px" }}>
+                {visibleJobs.map(job => (
+                  <JobCard key={job.id} job={job} colors={colors} onSelect={setSelectedJob} onStatusChange={updateStatus} onFieldChange={updateField} onDelete={deleteJob} />
+                ))}
+              </div>
             </div>
           </div>
         )}

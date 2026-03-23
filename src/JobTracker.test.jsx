@@ -41,7 +41,7 @@ vi.mock("../data/initialJobs.js", () => ({
 
 // systemPrompt.js imports resume.txt?raw which Vitest can't handle
 vi.mock("./prompts/systemPrompt.js", () => ({
-  SYSTEM_PROMPT: "mock system prompt",
+  buildSystemPrompt: () => "mock system prompt",
 }));
 
 // ---------------------------------------------------------------------------
@@ -124,6 +124,43 @@ describe("dashboard rendering", () => {
     const companies = screen.getAllByTestId("job-card-company").map(el => el.textContent);
     expect(companies).toContain("Acme Corp");
     expect(companies).toContain("Globex");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Filtering — status and recommendation
+// ---------------------------------------------------------------------------
+describe("dashboard filtering", () => {
+  beforeEach(async () => {
+    await renderApp();
+  });
+
+  it("renders the filter-status dropdown", () => {
+    expect(screen.getByTestId("filter-status")).toBeInTheDocument();
+  });
+
+  it("renders the filter-fit dropdown", () => {
+    expect(screen.getByTestId("filter-fit")).toBeInTheDocument();
+  });
+
+  it("filtering by status hides non-matching jobs", async () => {
+    await userEvent.selectOptions(screen.getByTestId("filter-status"), "Applied ✅");
+    const cards = screen.getAllByTestId("job-card");
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toHaveTextContent("Acme Corp");
+  });
+
+  it("filtering by recommendation hides non-matching jobs", async () => {
+    await userEvent.selectOptions(screen.getByTestId("filter-fit"), "Skip");
+    const cards = screen.getAllByTestId("job-card");
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toHaveTextContent("Globex");
+  });
+
+  it("clear button resets both filters and shows all jobs", async () => {
+    await userEvent.selectOptions(screen.getByTestId("filter-fit"), "Strong");
+    await userEvent.click(screen.getByText("clear"));
+    expect(screen.getAllByTestId("job-card")).toHaveLength(2);
   });
 });
 

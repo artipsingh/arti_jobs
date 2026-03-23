@@ -24,7 +24,7 @@ describe("jobsToCSV", () => {
   it("header row matches expected columns", () => {
     const header = jobsToCSV([sampleJob]).split("\n")[0];
     expect(header).toBe(
-      "id,company,role,salary,fitScore,verdict,strengths,gaps,recommendation,status,dateAdded"
+      "id,company,role,salary,fitScore,verdict,strengths,gaps,recommendation,status,dateAdded,statusHistory,postingUrl"
     );
   });
 

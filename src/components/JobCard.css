@@ -1,0 +1,152 @@
+.job-card {
+  padding: 12px 24px 0 24px;
+  cursor: pointer;
+  position: relative;
+}
+
+.job-card__delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.job-card__delete:hover { color: #ef4444; }
+
+.job-card__grid {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto auto auto auto;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 12px;
+}
+
+.job-card__company {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.job-card__role {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.job-card__separator {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.job-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.job-card__date {
+  font-size: 11px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.job-card__salary {
+  font-size: 11px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.job-card__input {
+  background: #070709;
+  border: 1px solid #1e2535;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  width: 110px;
+}
+
+.job-card__date-input {
+  background: #070709;
+  border: 1px solid #1e2535;
+  border-radius: 6px;
+  color: #475569;
+  padding: 4px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+}
+.job-card__date-input.has-value { color: #e2e8f0; }
+
+.job-card__resume {
+  background: #070709;
+  border: 1px solid #1e2535;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  width: 140px;
+  resize: none;
+}
+
+.job-card__verdict {
+  font-size: 11px;
+  color: #475569;
+  border-top: 1px solid #1e2535;
+  padding: 8px 0;
+}
+
+.job-card__recommendation {
+  font-size: 11px;
+  border-top: 1px solid #1e2535;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.job-card__rec-label {
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 10px;
+}
+
+.job-card__rec-badge {
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 10px;
+}
+
+.job-card__posting-url {
+  background: #070709;
+  border: 1px solid #1e2535;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.job-card__posting-link {
+  color: #60a5fa;
+  font-size: 13px;
+  text-decoration: none;
+  padding: 0 2px;
+}
+.job-card__posting-link:hover { color: #93c5fd; }

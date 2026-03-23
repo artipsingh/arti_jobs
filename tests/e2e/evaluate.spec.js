@@ -6,8 +6,33 @@ import { test, expect } from "@playwright/test";
 const FAKE_POSTING = `
   Senior QA Engineer — Acme Corp (Remote, Canada)
   Build and maintain Cypress E2E suites, integrate with Jenkins CI/CD.
-  5+ years QA/SDET experience. Salary: CA$130,000–$145,000.
+  5+ years QA/SDET experience. Salary: CA$ 90–190K
 `;
+
+const MOCK_CLAUDE_RESPONSE = {
+      company: "Acme Corp",
+      role: "Senior QA Engineer",
+      salary: "CA$90–$190K",
+      fitScore: "Strong",
+      recommendation: "Apply",
+      verdict: "Strong match with Cypress and CI/CD depth.",
+      strengths: ["Cypress E2E automation", "CI/CD"],
+      gaps: ["No Kubernetes"],
+    };
+
+  const MOCK_RECOMMENDATION = {
+      company: "Acme Corp", role: "Senior QA Engineer", salary: "CA$130K",
+      fitScore: "Strong", recommendation: "Apply", verdict: "Strong match.",
+      strengths: ["Cypress"], gaps: [],
+    }
+
+const seedJobs = [
+      {
+        id: 1, company: "Seed Corp", role: "QA Engineer", fitScore: "Strong",
+        recommendation: "Apply", status: "Applied ✅", verdict: "Good match.",
+        strengths: ["Cypress"], gaps: [], salary: "CA$130K", dateAdded: "2026-01-01",
+      },
+    ];
 
 function mockClaude(page, result) {
   return page.route("/api/anthropic/v1/messages", async (route) => {
@@ -22,17 +47,12 @@ function mockClaude(page, result) {
 }
 
 test.describe("evaluate flow", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+  });
   test("result card shows all fields after a successful API call", async ({ page }) => {
-    await mockClaude(page, {
-      company: "Acme Corp",
-      role: "Senior QA Engineer",
-      salary: "CA$130,000–$145,000",
-      fitScore: "Strong",
-      recommendation: "Apply",
-      verdict: "Strong match with Cypress and CI/CD depth.",
-      strengths: ["Cypress E2E automation", "Jenkins CI/CD"],
-      gaps: ["No Kubernetes"],
-    });
+    await mockClaude(page, MOCK_CLAUDE_RESPONSE);
 
     await page.goto("/");
     await page.getByTestId("nav-evaluate").click();
@@ -51,13 +71,7 @@ test.describe("evaluate flow", () => {
   });
 
   test("adding result to tracker increments stat-total and shows card on dashboard", async ({ page }) => {
-    const seedJobs = [
-      {
-        id: 1, company: "Seed Corp", role: "QA Engineer", fitScore: "Strong",
-        recommendation: "Apply", status: "Applied ✅", verdict: "Good match.",
-        strengths: ["Cypress"], gaps: [], salary: "CA$130K", dateAdded: "2026-01-01",
-      },
-    ];
+    
     await page.route("/api/jobs", async (route) => {
       if (route.request().method() === "GET") {
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(seedJobs) });
@@ -65,11 +79,8 @@ test.describe("evaluate flow", () => {
         await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
       }
     });
-    await mockClaude(page, {
-      company: "Acme Corp", role: "Senior QA Engineer", salary: "CA$130K",
-      fitScore: "Strong", recommendation: "Apply", verdict: "Strong match.",
-      strengths: ["Cypress"], gaps: [],
-    });
+    
+    await mockClaude(page, MOCK_RECOMMENDATION);
 
     await page.goto("/");
     await page.waitForLoadState("networkidle");

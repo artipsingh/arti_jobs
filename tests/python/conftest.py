@@ -9,6 +9,7 @@ Two modes:
 
 import json
 import re
+from typing import TypedDict, cast
 import pytest
 import requests
 from pathlib import Path
@@ -19,6 +20,11 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent.parent
 RESUME_PATH = ROOT / "data" / "resume.txt"
 ENV_PATH = ROOT / ".env"
+PROMPTS_PATH = ROOT / "src" / "prompts"
+PROMPT_TEMPLATE_PATH = PROMPTS_PATH / "promptTemplate.txt"
+SALARY_RULES_PATH = PROMPTS_PATH / "salaryRules.txt"
+EXPERIENCE_MAPPING_PATH = PROMPTS_PATH / "experienceMapping.txt"
+SKIP_CONDITIONS_PATH = PROMPTS_PATH / "skipConditions.txt"
 
 # ---------------------------------------------------------------------------
 # Constants mirrored from systemPrompt.js and constants.js
@@ -40,9 +46,22 @@ REQUIRED_FIELDS = [
 ]
 
 # ---------------------------------------------------------------------------
+# Response type — matches the JSON schema defined in systemPrompt.js
+# ---------------------------------------------------------------------------
+class JobEvaluation(TypedDict):
+    company: str
+    role: str
+    salary: str
+    fitScore: str
+    verdict: str
+    gaps: list[str]
+    strengths: list[str]
+    recommendation: str
+
+# ---------------------------------------------------------------------------
 # Pytest option: --live
 # ---------------------------------------------------------------------------
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--live",
         action="store_true",
@@ -51,7 +70,7 @@ def pytest_addoption(parser):
     )
 
 @pytest.fixture(scope="session")
-def live(request):
+def live(request: pytest.FixtureRequest) -> bool:
     return request.config.getoption("--live")
 
 # ---------------------------------------------------------------------------
@@ -68,52 +87,17 @@ def _read_api_key():
 
 def _build_system_prompt():
     """Reconstruct the system prompt from source files — mirrors systemPrompt.js."""
-    resume = RESUME_PATH.read_text()
-    return f"""
-Act as a deterministic job-fit evaluation engine. Evaluate each provided job posting against Arti's resume using only the rules, mappings, and resume context below.
-
-SCORING RULES:
-- If a HARD requirement is missing, maximum score is "Moderate"
-- If more than 2 hard requirements are missing, score is "Skip"
-- Nice-to-haves and bonus points do not lower the score
-- 14+ years always clears any years-of-experience requirement
-- Salary below $120K CAD is treated as a hard gap
-
-SALARY RULES:
-- Arti's floor is $130K CAD
-- If salary is listed and under $120K CAD, add "Below salary floor" as a gap
-- If salary is listed between $120K-$129K, add "Below preferred salary anchor" as a gap
-- If salary is not listed, note "Not listed" but do not penalize the score
-
-EXPERIENCE MAPPING:
-- Client-facing UAT, delivery quality, go/no-go, QA Lead roles → lead with Rangle experience
-- CI/CD, pipeline engineering, developer tooling, SDET roles → lead with Loopio experience
-- AI testing, LLM validation, prompt injection roles → Loopio AI quality work is directly relevant
-- Team leadership, mentorship roles → both Rangle and LoblawDigital are relevant
-
-AUTOMATIC SKIP CONDITIONS — score must be "Skip" if the posting requires ANY of these:
-- Kubernetes as the core product or primary skill
-- Java as the primary or required language
-- Vendor transition leadership as the main responsibility
-- Performance/load testing tools (JMeter, Gatling, k6) as a hard requirement
-
-Here is Arti's resume:
-{resume}
-
-When given a job posting, evaluate the fit and respond with ONLY a valid JSON object (no markdown, no backticks) in this exact format:
-{{
-  "company": "Company name",
-  "role": "Job title",
-  "salary": "Salary range or 'Not listed'",
-  "fitScore": "Strong" | "Moderate" | "Stretch" | "Skip",
-  "verdict": "One sentence verdict that references the most relevant experience",
-  "gaps": ["gap 1", "gap 2", "gap 3"],
-  "strengths": ["strength 1", "strength 2", "strength 3"],
-  "recommendation": "Apply" | "Apply with caution" | "Skip" | "Reach out to contact first"
-}}"""
+    template = PROMPT_TEMPLATE_PATH.read_text()
+    return (
+        template
+        .replace("__SALARY_RULES__", SALARY_RULES_PATH.read_text())
+        .replace("__EXPERIENCE_MAPPING__", EXPERIENCE_MAPPING_PATH.read_text())
+        .replace("__SKIP_CONDITIONS__", SKIP_CONDITIONS_PATH.read_text())
+        .replace("__RESUME__", RESUME_PATH.read_text())
+    )
 
 
-def call_claude(posting: str) -> dict:
+def call_claude(posting: str) -> JobEvaluation:
     """Call the Anthropic API and return the parsed JSON evaluation."""
     api_key = _read_api_key()
     if not api_key:
@@ -127,11 +111,11 @@ def call_claude(posting: str) -> dict:
             "content-type": "application/json",
         },
         json={
-            "model": "claude-sonnet-4-20250514",
+            "model": "claude-sonnet-4-6",
             "max_tokens": 1000,
             "system": _build_system_prompt(),
             "messages": [
-                {"role": "user", "content": f"Evaluate this job posting for Arti:\n\n{posting}"}
+                {"role": "user", "content": f"Evaluate this job posting for Arti:\n\n<job_posting>\n{posting}\n</job_posting>"}
             ],
         },
         timeout=30,
@@ -139,13 +123,13 @@ def call_claude(posting: str) -> dict:
     response.raise_for_status()
     text = response.json()["content"][0]["text"]
     clean = re.sub(r"```json|```", "", text).strip()
-    return json.loads(clean)
+    return cast(JobEvaluation, json.loads(clean))
 
 # ---------------------------------------------------------------------------
 # Fixture data — representative responses used in unit tests
 # ---------------------------------------------------------------------------
 @pytest.fixture
-def strong_response():
+def strong_response() -> JobEvaluation:
     """A well-formed Strong fit response with proper experience citations."""
     return {
         "company": "nesto",
@@ -159,7 +143,7 @@ def strong_response():
     }
 
 @pytest.fixture
-def skip_response():
+def skip_response() -> JobEvaluation:
     """A well-formed Skip response for a Kubernetes-core role."""
     return {
         "company": "vCluster Labs",
@@ -173,7 +157,7 @@ def skip_response():
     }
 
 @pytest.fixture
-def moderate_response():
+def moderate_response() -> JobEvaluation:
     """A well-formed Moderate fit response with one hard gap."""
     return {
         "company": "Veeva Systems",

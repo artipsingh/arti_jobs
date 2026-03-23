@@ -19,7 +19,7 @@ export async function evaluateJob(posting, systemPrompt) {
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
       system: systemPrompt,
-      messages: [{ role: "user", content: `Evaluate this job posting for Arti:\n\n${cleanedText}` }]
+      messages: [{ role: "user", content: `Evaluate this job posting for Arti:\n\n<job_posting>\n${cleanedText}\n</job_posting>` }]
     })
   });
 

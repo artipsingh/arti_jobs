@@ -13,6 +13,7 @@ minimal constructed job postings designed to trigger specific rules.
 
 import pytest
 from conftest import (
+    JobEvaluation,
     call_claude,
     JAVA_REQUIRED_POSTING,
     KUBERNETES_POSTING,
@@ -26,7 +27,7 @@ from conftest import (
 # ---------------------------------------------------------------------------
 # Business rule validators
 # ---------------------------------------------------------------------------
-def assert_skip_alignment(result: dict):
+def assert_skip_alignment(result: JobEvaluation):
     """A Skip fitScore must always have a Skip recommendation."""
     if result["fitScore"] == "Skip":
         assert result["recommendation"] == "Skip", (
@@ -35,7 +36,7 @@ def assert_skip_alignment(result: dict):
         )
 
 
-def assert_strong_not_skipped(result: dict):
+def assert_strong_not_skipped(result: JobEvaluation):
     """A Strong fitScore must never recommend Skip."""
     if result["fitScore"] == "Strong":
         assert result["recommendation"] != "Skip", (
@@ -43,7 +44,7 @@ def assert_strong_not_skipped(result: dict):
         )
 
 
-def assert_salary_below_floor_flagged(result: dict):
+def assert_salary_below_floor_flagged(result: JobEvaluation):
     """When salary is clearly below the $5K floor, gaps must call it out."""
     salary_gap_found = any(
         "salary" in g.lower() or "floor" in g.lower() or "$120" in g or "below" in g.lower()
@@ -55,7 +56,7 @@ def assert_salary_below_floor_flagged(result: dict):
     )
 
 
-def assert_salary_below_anchor_flagged(result: dict):
+def assert_salary_below_anchor_flagged(result: JobEvaluation):
     """When salary is between $5K-$9K, gaps must flag the anchor gap."""
     anchor_gap_found = any(
         "anchor" in g.lower() or "preferred" in g.lower() or "below" in g.lower()
@@ -67,7 +68,7 @@ def assert_salary_below_anchor_flagged(result: dict):
     )
 
 
-def assert_uat_cites_rangle(result: dict):
+def assert_uat_cites_rangle(result: JobEvaluation):
     """Per experience-mapping rules, UAT/QA Lead roles must cite Rangle in strengths or verdict."""
     rangle_cited = (
         any("rangle" in s.lower() for s in result["strengths"])
@@ -81,7 +82,7 @@ def assert_uat_cites_rangle(result: dict):
     )
 
 
-def assert_sdet_cites_loopio(result: dict):
+def assert_sdet_cites_loopio(result: JobEvaluation):
     """Per experience-mapping rules, CI/CD/SDET roles must cite Loopio in strengths or verdict."""
     loopio_cited = (
         any("loopio" in s.lower() for s in result["strengths"])
@@ -100,44 +101,44 @@ def assert_sdet_cites_loopio(result: dict):
 # ---------------------------------------------------------------------------
 class TestBusinessRulesWithFixtures:
 
-    def test_skip_fitness_aligns_with_skip_recommendation(self, skip_response):
+    def test_skip_fitness_aligns_with_skip_recommendation(self, skip_response: JobEvaluation) -> None:
         assert_skip_alignment(skip_response)
 
-    def test_strong_fitness_not_skipped(self, strong_response):
+    def test_strong_fitness_not_skipped(self, strong_response: JobEvaluation) -> None:
         assert_strong_not_skipped(strong_response)
 
-    def test_moderate_skip_recommendation_allowed(self, moderate_response):
+    def test_moderate_skip_recommendation_allowed(self, moderate_response: JobEvaluation) -> None:
         # Moderate fit with a hard disqualifier (Java) can still recommend Skip
         assert moderate_response["fitScore"] == "Moderate"
         assert moderate_response["recommendation"] == "Skip"
 
-    def test_uat_role_cites_rangle(self, strong_response):
+    def test_uat_role_cites_rangle(self, strong_response: JobEvaluation) -> None:
         # strong_response fixture is for nesto (UAT role) and cites Rangle
         assert_uat_cites_rangle(strong_response)
 
     # --- Negative cases: validate rule checkers catch violations ---
 
-    def test_skip_score_with_non_skip_recommendation_fails(self, skip_response):
+    def test_skip_score_with_non_skip_recommendation_fails(self, skip_response: JobEvaluation) -> None:
         skip_response["recommendation"] = "Apply"
         with pytest.raises(AssertionError, match="must align"):
             assert_skip_alignment(skip_response)
 
-    def test_strong_score_with_skip_recommendation_fails(self, strong_response):
+    def test_strong_score_with_skip_recommendation_fails(self, strong_response: JobEvaluation) -> None:
         strong_response["recommendation"] = "Skip"
         with pytest.raises(AssertionError, match="contradiction"):
             assert_strong_not_skipped(strong_response)
 
-    def test_missing_salary_gap_fails(self, strong_response):
+    def test_missing_salary_gap_fails(self, strong_response: JobEvaluation) -> None:
         strong_response["gaps"] = ["Fintech domain experience"]
         with pytest.raises(AssertionError, match="salary gap"):
             assert_salary_below_floor_flagged(strong_response)
 
-    def test_missing_anchor_gap_fails(self, strong_response):
+    def test_missing_anchor_gap_fails(self, strong_response: JobEvaluation) -> None:
         strong_response["gaps"] = ["Mobile testing"]
         with pytest.raises(AssertionError, match="anchor gap"):
             assert_salary_below_anchor_flagged(strong_response)
 
-    def test_uat_role_without_rangle_fails(self, strong_response):
+    def test_uat_role_without_rangle_fails(self, strong_response: JobEvaluation) -> None:
         strong_response["strengths"] = ["CI/CD pipelines", "Docker", "Python"]
         strong_response["verdict"] = "Good technical match with CI/CD experience."
         with pytest.raises(AssertionError, match="Rangle"):
@@ -149,7 +150,7 @@ class TestBusinessRulesWithFixtures:
 # ---------------------------------------------------------------------------
 class TestAutoSkipLive:
 
-    def test_java_required_is_always_skip(self, live):
+    def test_java_required_is_always_skip(self, live: bool):
         """Java as the primary required language is an automatic Skip condition."""
         if not live:
             pytest.skip("Pass --live to run")
@@ -159,7 +160,7 @@ class TestAutoSkipLive:
         )
         assert result["recommendation"] == "Skip"
 
-    def test_kubernetes_core_is_always_skip(self, live):
+    def test_kubernetes_core_is_always_skip(self, live: bool):
         """Kubernetes as the core product is an automatic Skip condition."""
         if not live:
             pytest.skip("Pass --live to run")
@@ -168,7 +169,7 @@ class TestAutoSkipLive:
             f"Kubernetes core posting should be Skip, got '{result['fitScore']}'"
         )
 
-    def test_jmeter_required_is_always_skip(self, live):
+    def test_jmeter_required_is_always_skip(self, live: bool):
         """JMeter as a hard requirement is an automatic Skip condition."""
         if not live:
             pytest.skip("Pass --live to run")
@@ -180,21 +181,21 @@ class TestAutoSkipLive:
 
 class TestSalaryRulesLive:
 
-    def test_salary_below_floor_flagged_in_gaps(self, live):
+    def test_salary_below_floor_flagged_in_gaps(self, live: bool) -> None:
         """CA$1K–$4K salary must appear as a gap."""
         if not live:
             pytest.skip("Pass --live to run")
         result = call_claude(BELOW_FLOOR_POSTING)
         assert_salary_below_floor_flagged(result)
 
-    def test_salary_below_anchor_flagged_in_gaps(self, live):
+    def test_salary_below_anchor_flagged_in_gaps(self, live: bool) -> None:
         """CA$5K–$128K salary must flag the preferred anchor gap."""
         if not live:
             pytest.skip("Pass --live to run")
         result = call_claude(BELOW_ANCHOR_POSTING)
         assert_salary_below_anchor_flagged(result)
 
-    def test_salary_below_floor_does_not_override_auto_skip(self, live):
+    def test_salary_below_floor_does_not_override_auto_skip(self, live: bool) -> None:
         """A Java role with low salary is still Skip — auto-skip takes precedence."""
         if not live:
             pytest.skip("Pass --live to run")
@@ -204,14 +205,14 @@ class TestSalaryRulesLive:
 
 class TestExperienceMappingLive:
 
-    def test_uat_lead_role_cites_rangle(self, live):
+    def test_uat_lead_role_cites_rangle(self, live: bool) -> None:
         """Client-facing UAT roles must lead with Rangle per experience-mapping rules."""
         if not live:
             pytest.skip("Pass --live to run")
         result = call_claude(UAT_LEAD_POSTING)
         assert_uat_cites_rangle(result)
 
-    def test_skip_score_aligns_with_recommendation_live(self, live):
+    def test_skip_score_aligns_with_recommendation_live(self, live: bool) -> None:
         """Skip fitScore must always produce Skip recommendation — live validation."""
         if not live:
             pytest.skip("Pass --live to run")

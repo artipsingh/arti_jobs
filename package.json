@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "TEST_JOBS_FILE=data/jobs.test.json playwright test",
+    "test:e2e:debug": "TEST_JOBS_FILE=data/jobs.test.json playwright test --headed --debug",
+    "dev:test": "TEST_JOBS_FILE=data/jobs.test.json vite",
+    "show-report": "npx playwright show-report"
   },
   "dependencies": {
     "react": "^19.2.0",

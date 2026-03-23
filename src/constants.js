@@ -5,4 +5,4 @@ export const FIT_COLORS = {
   Skip: { bg: "bg-red-500/20", text: "text-red-300", border: "border-red-500/40", dot: "bg-red-400" },
 };
 
-export const STATUS_OPTIONS = ["Applied ✅", "Reaching out 📨", "Interview scheduled 🎯", "Offer received 🎉", "On hold ⏸️", "Skipped ❌", "Considering 🤔", "Finding contact 🔍"];
+export const STATUS_OPTIONS = ["Applied ✅", "Reaching out 📨", "Interview scheduled 🎯","Interview 1 🕒","Interview 2 🕒","Interview 3 🕒", "Offer Negotiation 🤝","Offer received 🎉","Rejected", "On hold ⏸️", "Skipped ❌", "Considering 🤔", "Finding contact 🔍"];

@@ -26,6 +26,8 @@ export default function JobTracker() {
           try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) setJobs(JSON.parse(saved));
+            
+          // eslint-disable-next-line no-empty
           } catch {}
         }
         setJobsLoaded(true);
@@ -34,6 +36,7 @@ export default function JobTracker() {
         try {
           const saved = localStorage.getItem(STORAGE_KEY);
           if (saved) setJobs(JSON.parse(saved));
+        // eslint-disable-next-line no-empty
         } catch {}
         setJobsLoaded(true);
       });

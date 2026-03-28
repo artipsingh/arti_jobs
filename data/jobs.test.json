@@ -1,0 +1,115 @@
+[
+  {
+    "id": 1,
+    "company": "Acme Corp",
+    "role": "Senior QA Engineer",
+    "salary": "CA$120K–$140K",
+    "fitScore": "Strong",
+    "verdict": "Strong match — test automation and CI/CD depth align well.",
+    "gaps": [],
+    "strengths": [
+      "Cypress E2E",
+      "CI/CD pipelines",
+      "API testing"
+    ],
+    "recommendation": "Apply",
+    "status": "Applied ✅",
+    "dateAdded": "2026-01-01"
+  },
+  {
+    "id": 2,
+    "company": "Beta Inc",
+    "role": "QA Lead",
+    "salary": "CA$130K–$150K",
+    "fitScore": "Moderate",
+    "verdict": "Good fit but mobile testing is a gap.",
+    "gaps": [
+      "Mobile testing (Appium)"
+    ],
+    "strengths": [
+      "14 years experience",
+      "Leadership",
+      "Playwright"
+    ],
+    "recommendation": "Apply with caution",
+    "status": "Considering 🤔",
+    "dateAdded": "2026-01-02"
+  },
+  {
+    "id": 3,
+    "company": "Beta Inc",
+    "role": "QA Lead",
+    "salary": "CA$130K–$150K",
+    "fitScore": "Moderate",
+    "verdict": "Good fit but mobile testing is a gap.",
+    "gaps": [
+      "Mobile testing (Appium)"
+    ],
+    "strengths": [
+      "14 years experience",
+      "Leadership",
+      "Playwright"
+    ],
+    "recommendation": "Apply with caution",
+    "status": "Considering 🤔",
+    "dateAdded": "2026-01-02"
+  },
+  {
+    "id": 4,
+    "company": "Beta Inc",
+    "role": "QA Lead",
+    "salary": "CA$130K–$150K",
+    "fitScore": "Moderate",
+    "verdict": "Good fit but mobile testing is a gap.",
+    "gaps": [
+      "Mobile testing (Appium)"
+    ],
+    "strengths": [
+      "14 years experience",
+      "Leadership",
+      "Playwright"
+    ],
+    "recommendation": "Apply with caution",
+    "status": "Considering 🤔",
+    "dateAdded": "2026-01-02"
+  },
+  {
+    "id": 5,
+    "company": "Beta Inc",
+    "role": "QA Lead",
+    "salary": "CA$130K–$150K",
+    "fitScore": "Moderate",
+    "verdict": "Good fit but mobile testing is a gap.",
+    "gaps": [
+      "Mobile testing (Appium)"
+    ],
+    "strengths": [
+      "14 years experience",
+      "Leadership",
+      "Playwright"
+    ],
+    "recommendation": "Apply with caution",
+    "status": "Considering 🤔",
+    "dateAdded": "2026-01-02"
+  },
+  {
+    "id": 6,
+    "company": "Gamma LLC",
+    "role": "SDET",
+    "salary": "CA$150K–$180K",
+    "fitScore": "Weak",
+    "verdict": "Weak fit — heavy emphasis on Java and Selenium, which are gaps.",
+    "gaps": [
+      "Java",
+      "Selenium"
+    ],
+    "strengths": [
+      "14 years experience",
+      "API testing",
+      "CI/CD"
+    ],
+    "recommendation": "Skip",
+    "status": "Skipped ❌",
+    "dateAdded": "2026-01-03"
+  }
+]

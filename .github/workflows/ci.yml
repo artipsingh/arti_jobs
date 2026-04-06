@@ -41,6 +41,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Copy prompt and resume stubs for CI
+        run: |
+          cp src/prompts/experienceMapping.stub.txt src/prompts/experienceMapping.txt
+          cp src/prompts/skipConditions.stub.txt src/prompts/skipConditions.txt
+          cp src/prompts/salaryRules.stub.txt src/prompts/salaryRules.txt
+          cp src/prompts/promptTemplate.stub.txt src/prompts/promptTemplate.txt
+          cp data/resume.stub.txt data/resume.txt
+
       - name: Run Playwright tests
         run: npm run test:e2e
 

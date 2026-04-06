@@ -1,0 +1,1 @@
+CI stub — replace with real resume.txt to run the app.

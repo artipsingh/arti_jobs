@@ -43,6 +43,7 @@ scripts/search_config.json
 # generated test output
 playwright-report/
 test-results.json
+coverage/
 
 
 

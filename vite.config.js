@@ -108,5 +108,23 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test-setup.js',
     exclude: ['tests/e2e/**', 'node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{js,jsx}'],
+      exclude: [
+        'src/test-setup.js',
+        'src/prompts/**',
+        'src/main.jsx',                    // entry point, not unit testable
+        'src/App.jsx',                     // thin shell, covered by E2E
+        'src/utils/validatePromptFile.js', // requires gitignored prompt files
+      ],
+      reporter: ['text', 'html', 'lcov'],
+      thresholds: {
+        lines: 55,
+        functions: 50,
+        branches: 55,
+        statements: 55,
+      },
+    },
   },
 })

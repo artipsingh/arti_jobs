@@ -1,5 +1,7 @@
 # arti.jobs — AI-Powered Job Search Tracker
 
+[![CI](https://github.com/artipsingh/arti_jobs/actions/workflows/ci.yml/badge.svg)](https://github.com/artipsingh/arti_jobs/actions/workflows/ci.yml)
+
 A job evaluation and tracking tool built to demonstrate AI quality engineering in practice.
 
 Paste a job posting, and the app uses the Claude API to evaluate fit against a specific candidate profile — returning a structured assessment with a fit score, strengths, gaps, and a recommendation. Results are saved locally so you can track every role in one place.

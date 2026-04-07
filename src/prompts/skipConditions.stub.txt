@@ -1,0 +1,1 @@
+CI stub — replace with real skipConditions.txt to run the app.

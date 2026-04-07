@@ -13,7 +13,7 @@ import { healingLocator } from "../helpers/selfHealingLocator.js";
 test.describe("dashboard", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('[data-testid="stat-total"]');
   });
 
   test("stat-total matches the number of rendered job cards", async ({

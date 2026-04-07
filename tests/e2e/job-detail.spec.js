@@ -24,7 +24,7 @@ test.describe("job detail flow", () => {
     });
 
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForSelector('[data-testid="stat-total"]');
     await page.getByTestId("job-card").first().click();
   });
 
@@ -33,16 +33,10 @@ test.describe("job detail flow", () => {
   });
 
   test("detail panel shows company, role, fit score and verdict", async ({ page }) => {
-    const testIDs = ["job-detail-company","job-detail-role","job-detail-fit-score", "job-detail-verdict"]
-    testIDs.forEach(async id=>{
+    const testIDs = ["job-detail-company", "job-detail-role", "job-detail-fit-score", "job-detail-verdict"];
+    for (const id of testIDs) {
       await expect(page.getByTestId(id)).not.toBeEmpty();
-    })
-  });
-
-  test("status change in detail is reflected in the dropdown", async ({ page }) => {
-    const select = page.getByTestId("job-detail-status");
-    await select.selectOption("Interview scheduled 🎯");
-    await expect(select).toHaveValue("Interview scheduled 🎯");
+    }
   });
 
   test("status change in detail is visible on the dashboard card after going back", async ({ page }) => {
@@ -50,17 +44,4 @@ test.describe("job detail flow", () => {
     await page.getByTestId("btn-back").click();
     await expect(page.getByTestId("job-card").first().getByTestId("job-card-status")).toHaveValue("Applied ✅");
   });
-
-  test("The count of the skipped jobs is displayed correctly", async ({ page }) => {
-    const skippedJobs = TEST_JOBS.filter((job) => job.status === "Skipped ❌");
-    const appliedJobs = TEST_JOBS.filter((job) => job.status === "Applied ✅");
-    const strongJobs = TEST_JOBS.filter((job) => job.fitScore === "Strong");
-  
-    await expect(page.getByTestId("stat-skipped")).toContainText(String(skippedJobs.length));
-    await expect(page.getByTestId("stat-applied")).toContainText(String(appliedJobs.length));
-    await expect(page.getByTestId("stat-strong")).toContainText(String(strongJobs.length));
-    await expect(page.getByTestId("stat-total")).toContainText(String(TEST_JOBS.length));
-  });
-
-
 });

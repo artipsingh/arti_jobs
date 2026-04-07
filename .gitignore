@@ -26,6 +26,13 @@ data/resume.txt
 # private prompt files — gitignored, substitute your own to run the app/tests
 src/prompts/*.txt
 
+# private prompt files — gitignored, substitute your own to run the app/tests
+src/prompts/*.txt
+!src/prompts/experienceMapping.stub.txt
+!src/prompts/salaryRules.stub.txt
+!src/prompts/skipConditions.stub.txt
+!src/prompts/promptTemplate.stub.txt
+
 # python
 tests/python/__pycache__/
 tests/python/venv/

@@ -1,0 +1,1 @@
+CI stub — replace with real salaryRules.txt to run the app.

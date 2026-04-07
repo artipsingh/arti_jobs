@@ -1,5 +1,35 @@
-// Shared test fixture — used by E2E tests to mock /api/jobs
+// Shared test fixture — used by E2E tests to mock /api/jobs and Claude API responses.
 // Never use real job data here. Keep this file committed safely.
+
+export const SEED_JOBS = [
+  {
+    id: 1, company: "Seed Corp", role: "QA Engineer", fitScore: "Strong",
+    recommendation: "Apply", status: "Applied ✅", verdict: "Good match.",
+    strengths: ["Cypress"], gaps: [], salary: "CA$130K", dateAdded: "2026-01-01",
+  },
+];
+
+export const MOCK_CLAUDE_RESPONSE = {
+  company: "Acme Corp",
+  role: "Senior QA Engineer",
+  salary: "CA$90–$190K",
+  fitScore: "Strong",
+  recommendation: "Apply",
+  verdict: "Strong match with Cypress and CI/CD depth.",
+  strengths: ["Cypress E2E automation", "CI/CD"],
+  gaps: ["No Kubernetes"],
+};
+
+export const MOCK_RECOMMENDATION = {
+  company: "Acme Corp",
+  role: "Senior QA Engineer",
+  salary: "CA$130K",
+  fitScore: "Strong",
+  recommendation: "Apply",
+  verdict: "Strong match.",
+  strengths: ["Cypress"],
+  gaps: [],
+};
 
 export const TEST_JOBS = [
   {

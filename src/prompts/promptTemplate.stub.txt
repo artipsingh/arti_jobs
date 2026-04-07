@@ -1,0 +1,1 @@
+CI stub — replace with real promptTemplate.txt to run the app.

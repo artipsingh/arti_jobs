@@ -24,6 +24,7 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from typing import Any, cast
 
 import requests
 
@@ -45,7 +46,7 @@ SKIP_CONDITIONS_PATH = PROMPTS_PATH / "skipConditions.txt"
 # ---------------------------------------------------------------------------
 # Environment
 # ---------------------------------------------------------------------------
-def load_env():
+def load_env() -> None:
     """Load .env into os.environ."""
     if not ENV_PATH.exists():
         return
@@ -56,7 +57,7 @@ def load_env():
             os.environ.setdefault(key.strip(), value.strip())
 
 
-def require_env(key):
+def require_env(key: str) -> str:
     value = os.environ.get(key)
     if not value:
         print(f"ERROR: {key} not set in .env", file=sys.stderr)
@@ -67,32 +68,32 @@ def require_env(key):
 # ---------------------------------------------------------------------------
 # Config + state
 # ---------------------------------------------------------------------------
-def load_config():
+def load_config() -> dict[str, Any]:
     with open(CONFIG_FILE) as f:
         return json.load(f)
 
 
-def load_seen_jobs():
+def load_seen_jobs() -> set[str]:
     if SEEN_JOBS_FILE.exists():
         with open(SEEN_JOBS_FILE) as f:
             return set(json.load(f))
     return set()
 
 
-def save_seen_jobs(seen):
+def save_seen_jobs(seen: set[str]) -> None:
     SEEN_JOBS_FILE.parent.mkdir(exist_ok=True)
     with open(SEEN_JOBS_FILE, "w") as f:
         json.dump(sorted(seen), f, indent=2)
 
 
-def load_jobs_tracker():
+def load_jobs_tracker() -> list[dict[str, Any]]:
     if JOBS_FILE.exists():
         with open(JOBS_FILE) as f:
             return json.load(f)
     return []
 
 
-def save_jobs_tracker(jobs):
+def save_jobs_tracker(jobs: list[dict[str, Any]]) -> None:
     with open(JOBS_FILE, "w") as f:
         json.dump(jobs, f, indent=2)
 
@@ -100,7 +101,7 @@ def save_jobs_tracker(jobs):
 # ---------------------------------------------------------------------------
 # Mock JSearch data (used with --mock-jsearch to avoid burning API quota)
 # ---------------------------------------------------------------------------
-def _mock_jsearch_results():
+def _mock_jsearch_results() -> list[dict[str, Any]]:
     """Returns one realistic fake job to exercise the full pipeline."""
     return [
         {
@@ -130,7 +131,7 @@ def _mock_jsearch_results():
 # ---------------------------------------------------------------------------
 # JSearch API
 # ---------------------------------------------------------------------------
-def search_jobs(query, location, remote_only, api_key):
+def search_jobs(query: str, location: str, remote_only: bool, api_key: str) -> list[dict[str, Any]]:
     """
     Search JSearch API for a single query term.
     Returns a list of raw job objects.
@@ -156,7 +157,7 @@ def search_jobs(query, location, remote_only, api_key):
         return []
 
 
-def build_posting_text(job):
+def build_posting_text(job: dict[str, Any]) -> str:
     """Convert a JSearch job object to plain text for Claude."""
     salary = "Not listed"
     if job.get("job_min_salary") and job.get("job_max_salary"):
@@ -180,7 +181,7 @@ Salary: {salary}
 # ---------------------------------------------------------------------------
 # Claude evaluation (mirrors conftest.py)
 # ---------------------------------------------------------------------------
-def _build_system_prompt():
+def _build_system_prompt() -> str:
     """Reconstruct the system prompt from source files — mirrors conftest.py."""
     template = PROMPT_TEMPLATE_PATH.read_text()
     return (
@@ -192,7 +193,7 @@ def _build_system_prompt():
     )
 
 
-def evaluate_job(posting_text, api_key):
+def evaluate_job(posting_text: str, api_key: str) -> dict[str, Any] | None:
     """Call Claude and return parsed evaluation dict, or None on failure."""
     try:
         response = requests.post(
@@ -224,7 +225,7 @@ def evaluate_job(posting_text, api_key):
 # ---------------------------------------------------------------------------
 # Email
 # ---------------------------------------------------------------------------
-def build_email_html(matches):
+def build_email_html(matches: list[dict[str, Any]]) -> str:
     """Build an HTML email body for a list of evaluated job matches."""
     FIT_COLORS = {
         "Strong": "#10b981",
@@ -296,7 +297,7 @@ def build_email_html(matches):
     </div>"""
 
 
-def send_email(matches, config, gmail_address, gmail_app_password):
+def send_email(matches: list[dict[str, Any]], config: dict[str, Any], gmail_address: str, gmail_app_password: str) -> None:
     """Send HTML email with matched jobs."""
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"arti.jobs — {len(matches)} new match{'es' if len(matches) != 1 else ''} found"
@@ -316,17 +317,17 @@ def send_email(matches, config, gmail_address, gmail_app_password):
 # ---------------------------------------------------------------------------
 # Tracker integration
 # ---------------------------------------------------------------------------
-def add_to_tracker(job, result):
+def add_to_tracker(job: dict[str, Any], result: dict[str, Any]) -> None:
     """Append an auto-scanned job to data/jobs.json."""
     tracker = load_jobs_tracker()
-    new_entry = {
+    new_entry: dict[str, Any] = cast(dict[str, Any], {
         **result,
         "id": int(datetime.now().timestamp() * 1000),
         "status": "Considering 🤔",
         "dateAdded": datetime.now().strftime("%Y-%m-%d"),
         "source": "auto-scan",
         "applyLink": job.get("job_apply_link", ""),
-    }
+    })
     tracker.insert(0, new_entry)
     save_jobs_tracker(tracker)
 
@@ -334,7 +335,7 @@ def add_to_tracker(job, result):
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main():
+def main() -> None:
     dry_run = "--dry-run" in sys.argv
     mock_jsearch = "--mock-jsearch" in sys.argv
 
@@ -356,7 +357,7 @@ def main():
         print("MOCK JSEARCH — no JSearch API calls, using hardcoded test job")
     print(f"{'='*60}")
 
-    all_new_jobs = []
+    all_new_jobs: list[tuple[str, dict[str, Any]]] = []
 
     # Search once remote (Canada-wide) and once local (Toronto) per term
     search_runs = [
@@ -404,7 +405,7 @@ def main():
     if dry_run and len(all_new_jobs) > 3:
         print(f"DRY RUN — evaluating first 3 of {len(all_new_jobs)} to save API credits")
 
-    matches = []
+    matches: list[dict[str, Any]] = []
 
     for search_term, job in jobs_to_evaluate:
         title = job.get("job_title", "?")

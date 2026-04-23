@@ -11,39 +11,34 @@
  * Requires VITE_ANTHROPIC_API_KEY in the environment (or .env file).
  *
  * A healed test WARNS — it does NOT silently pass.
+ * Pass { strict: true } to fail the test even when healing succeeds.
  */
 
 import { type Page, type Locator } from "@playwright/test";
 import Anthropic from "@anthropic-ai/sdk";
-import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { type HealingEvent, type SelectorSet } from "./selfHealingLocator.js";
+import {
+  type HealingEvent,
+  type HealingOptions,
+  type SelectorSet,
+  appendHealingEvent,
+  healingLocator,
+} from "./selfHealingLocator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const LOG_PATH = path.resolve(__dirname, "../../tests/healing-log.json");
-
-function appendHealingEvent(event: HealingEvent): void {
-  let log: HealingEvent[] = [];
-  if (fs.existsSync(LOG_PATH)) {
-    try {
-      log = JSON.parse(fs.readFileSync(LOG_PATH, "utf-8")) as HealingEvent[];
-    } catch {
-      log = [];
-    }
-  }
-  log.push(event);
-  fs.writeFileSync(LOG_PATH, JSON.stringify(log, null, 2));
-}
+// LOG_PATH kept here for reference — actual writes go through appendHealingEvent
+const _LOG_PATH = path.resolve(__dirname, "../../tests/healing-log.json");
+void _LOG_PATH;
 
 /**
  * Extract a selector string from Claude's response.
  * Claude is prompted to return exactly one selector on a line starting with
  * "SELECTOR:" so we can parse it reliably.
  */
-function extractSelector(claudeText: string): string | null {
+export function extractSelector(claudeText: string): string | null {
   const match = claudeText.match(/^SELECTOR:\s*(.+)$/m);
   return match ? match[1].trim() : null;
 }
@@ -52,7 +47,7 @@ function extractSelector(claudeText: string): string | null {
  * Trim the DOM to avoid blowing Claude's context window.
  * We strip script/style content and limit total length.
  */
-function trimDom(html: string, maxChars = 12_000): string {
+export function trimDom(html: string, maxChars = 12_000): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "<script>…</script>")
     .replace(/<style[\s\S]*?<\/style>/gi, "<style>…</style>")
@@ -68,8 +63,15 @@ function trimDom(html: string, maxChars = 12_000): string {
 export async function aiHeal(
   page: Page,
   selectors: SelectorSet,
-  testFile = "unknown"
+  testFile = "unknown",
+  options: HealingOptions = {}
 ): Promise<Locator> {
+  if (!process.env.ENABLE_AI_HEALING) {
+    throw new Error(
+      "[AI-HEALER] AI healing is disabled. Set ENABLE_AI_HEALING=true to allow Claude to suggest selectors."
+    );
+  }
+
   const apiKey = process.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -158,63 +160,53 @@ SELECTOR: null`;
       `   Description : ${selectors.description}\n` +
       `   Failed      : ${selectors.primary}\n` +
       `   AI suggested: ${suggested}\n` +
-      `   → Add this as a fallback in your SelectorSet, then update the primary.\n`
+      (options.strict
+        ? `   ✖ strict mode — failing the test so this gets fixed.\n`
+        : `   → Add this as a fallback in your SelectorSet, then update the primary.\n`)
   );
 
   appendHealingEvent(event);
+
+  if (options.strict) {
+    throw new Error(
+      `[SELF-HEALING L3] strict mode: AI had to heal "${selectors.description}" ` +
+        `with "${suggested}" — update your selectors.`
+    );
+  }
+
   return loc;
 }
 
 /**
  * Full self-healing pipeline: Level 2 fallbacks → Level 3 AI.
  *
- * Usage in tests:
- *   import { healWithAI } from "../helpers/aiHealer.js";
- *   const locator = await healWithAI(page, {
+ * L2 is handled by healingLocator — no duplicated loop here.
+ * If L2 exhausts all selectors it throws, and we escalate to aiHeal.
+ *
+ * Usage:
+ *   const btn = await healWithAI(page, {
  *     description: "Export CSV button",
  *     primary: '[data-testid="btn-export-csv"]',
- *     fallbacks: ['button:has-text("export csv")', 'button[download]'],
+ *     fallbacks: ['button:has-text("export csv")'],
  *   }, import.meta.url);
  */
 export async function healWithAI(
   page: Page,
   selectors: SelectorSet,
-  testFile = "unknown"
+  testFile = "unknown",
+  options: HealingOptions = {}
 ): Promise<Locator> {
-  const all = [selectors.primary, ...selectors.fallbacks];
-
-  // Level 2: try each selector
-  for (let i = 0; i < all.length; i++) {
-    const selector = all[i];
-    try {
-      const loc = page.locator(selector);
-      await loc.first().waitFor({ state: "attached", timeout: 500 });
-
-      if (i > 0) {
-        // Healing occurred at L2
-        const event: HealingEvent = {
-          timestamp: new Date().toISOString(),
-          testFile,
-          description: selectors.description,
-          failedSelector: selectors.primary,
-          healedWith: selector,
-          level: "L2-fallback",
-        };
-        console.warn(
-          `\n⚠️  [SELF-HEALING L2] Fallback selector worked for "${selectors.description}".\n` +
-            `   Failed   : ${selectors.primary}\n` +
-            `   Healed   : ${selector}\n` +
-            `   → Update the primary selector.\n`
-        );
-        appendHealingEvent(event);
-      }
-
-      return loc;
-    } catch {
-      // try next
+  try {
+    return await healingLocator(page, selectors, testFile, options);
+  } catch (err) {
+    // If strict mode threw from L2, propagate — don't escalate to AI
+    if (
+      err instanceof Error &&
+      err.message.startsWith("[SELF-HEALING L2] strict mode")
+    ) {
+      throw err;
     }
+    // All L2 selectors failed — escalate to Claude
+    return aiHeal(page, selectors, testFile, options);
   }
-
-  // Level 3: ask Claude
-  return aiHeal(page, selectors, testFile);
 }

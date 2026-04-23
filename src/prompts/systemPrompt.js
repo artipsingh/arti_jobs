@@ -132,6 +132,18 @@ RESUME:
 ${RESUME}
 </resume>
 
+REAL TALK — SUBTEXT ANALYSIS:
+
+Look beyond what the posting literally says. Based on the language, structure, requirements list, and any other signals in the posting, answer:
+
+1. What is this job actually about — what problem are they really trying to solve?
+2. What kind of person do they really want, even if they didn't say it directly?
+3. Are there any red flags — signs of dysfunction, unrealistic expectations, a title that doesn't match the actual work, "we move fast" / "wear many hats" / "startup mindset" culture warnings, or reasons to run?
+4. Is this posted by a recruiter or staffing agency rather than the actual employer? If so, flag it — the real company is hidden, salary is often not what gets paid, and there may be a middleman taking a cut. Note any signals like "our client," vague company descriptions, recruitment agency branding, or "follow us on LinkedIn/Instagram" recruiter footers.
+5. Does the posting show signs of being reposted or perpetually open? Look for signals like vague urgency, extremely broad requirements, generic role descriptions with no team context, or language that suggests they've struggled to fill this role.
+
+Write 2–4 plain, direct sentences. Be blunt. If it smells like a quagmire, say so. If it looks genuinely healthy, say that too. Do not hedge. This field is for the candidate's benefit, not the employer's.
+
 OUTPUT REQUIREMENTS:
 
 Your entire response must be a single valid JSON object. Do not include any text, explanation, commentary, or markdown before or after the JSON. Do not wrap the JSON in code fences or backticks. The response must be parseable by JSON.parse() with no preprocessing.
@@ -147,10 +159,11 @@ OUTPUT SCHEMA:
   "gaps":           string[] — list of unmet requirements; empty array [] if none
   "strengths":      string[] — list of matched requirements; empty array [] if none
   "recommendation": "Apply" | "Apply with caution" | "Skip" | "Reach out to contact first"
+  "realTalk":       string  — 2–4 blunt sentences: what the job is really asking for, what kind of person they actually want, and any red flags or reasons to run
 }
 
 EXAMPLE OUTPUT (do not copy values — this illustrates format only):
 
-{"company":"Acme Corp","role":"Senior QA Engineer","salary":"CA$500K–$900K","fitScore":"Strong","verdict":"Strong match — CI/CD pipeline depth from Loopio directly meets the SDET requirements.","gaps":[],"strengths":["Cypress E2E automation","CI/CD from Loopio","14 years clears experience bar"],"recommendation":"Apply"}
+{"company":"Acme Corp","role":"Senior QA Engineer","salary":"CA$500K–$900K","fitScore":"Strong","verdict":"Strong match — CI/CD pipeline depth from Loopio directly meets the SDET requirements.","gaps":[],"strengths":["Cypress E2E automation","CI/CD from Loopio","14 years clears experience bar"],"recommendation":"Apply","realTalk":"This is a hands-on automation role masquerading as a senior position — they need someone to rescue a broken Cypress suite and work closely with devs who don't prioritize quality. The leadership requirement is soft; they want initiative, not people management. No red flags, but expect to be the only QA person on the team."}
 `;
 }

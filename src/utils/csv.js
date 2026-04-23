@@ -52,13 +52,17 @@ export function jobsToCSV(jobs) {
   return [CSV_HEADERS.join(","), ...rows].join("\n");
 }
 
+const ALLOWED_CSV_FIELDS = new Set(CSV_HEADERS);
+
 export function csvToJobs(csvText) {
   const lines = csvText.trim().split("\n");
   const headers = parseCSVLine(lines[0]);
   return lines.slice(1).map(line => {
     const values = parseCSVLine(line);
     const job = {};
-    headers.forEach((h, i) => { job[h] = values[i] ?? ""; });
+    headers.forEach((h, i) => {
+      if (ALLOWED_CSV_FIELDS.has(h)) job[h] = values[i] ?? "";
+    });
     job.strengths = job.strengths ? job.strengths.split("; ") : [];
     job.gaps = job.gaps ? job.gaps.split("; ") : [];
 

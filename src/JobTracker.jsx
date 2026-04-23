@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import INITIAL_JOBS from "../data/initialJobs.js";
 import { FIT_COLORS, STATUS_OPTIONS } from "./constants.js";
 import { evaluateJob } from "./api/evaluateJob.js";
+import { judgeRealTalk } from "./api/judgeRealTalk.js";
+import { RealTalkCard } from "./components/RealTalkCard.jsx";
 import { JobCard } from "./components/JobCard.jsx";
 import { JobDetail } from "./components/JobDetail.jsx";
 import { buildSystemPrompt } from "./prompts/systemPrompt.js";
@@ -47,6 +49,7 @@ export default function JobTracker() {
   const [error, setError] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
   const [evaluationResult, setEvaluationResult] = useState(null);
+  const [judgeResult, setJudgeResult] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterFit, setFilterFit] = useState("All");
 
@@ -61,9 +64,15 @@ export default function JobTracker() {
     setLoading(true);
     setError("");
     setEvaluationResult(null);
+    setJudgeResult(null);
     try {
       const result = await evaluateJob(posting, buildSystemPrompt());
       setEvaluationResult(result);
+      if (result.realTalk) {
+        judgeRealTalk(posting, result.realTalk)
+          .then(setJudgeResult)
+          .catch(() => {}); // judge failure is silent — don't break the main result
+      }
     } catch (err) {
       setError(err.message || "Evaluation failed. Check the posting and try again.");
     } finally {
@@ -83,6 +92,7 @@ export default function JobTracker() {
     };
     setJobs(prev => [newJob, ...prev]);
     setEvaluationResult(null);
+    setJudgeResult(null);
     setPosting("");
     setView("dashboard");
   }
@@ -270,7 +280,7 @@ export default function JobTracker() {
               <button data-testid="btn-evaluate" className="btn-primary" onClick={evaluatePosting} disabled={loading || !posting.trim()}>
                 {loading ? <span className="pulse">evaluating...</span> : "evaluate posting →"}
               </button>
-              {posting && <button data-testid="btn-clear" className="btn-ghost" onClick={() => { setPosting(""); setEvaluationResult(null); setError(""); }}>clear</button>}
+              {posting && <button data-testid="btn-clear" className="btn-ghost" onClick={() => { setPosting(""); setEvaluationResult(null); setJudgeResult(null); setError(""); }}>clear</button>}
             </div>
 
             {error && (
@@ -296,6 +306,10 @@ export default function JobTracker() {
                   <div style={{ fontSize: "10px", color: "#475569", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "1px" }}>verdict</div>
                   <div data-testid="result-verdict" style={{ fontSize: "13px", color: "#cbd5e1" }}>{evaluationResult.verdict}</div>
                 </div>
+
+                {evaluationResult.realTalk && (
+                  <RealTalkCard realTalk={evaluationResult.realTalk} judgeResult={judgeResult} />
+                )}
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
                   <div data-testid="result-strengths">

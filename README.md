@@ -51,27 +51,7 @@ npm run dev
 
 ## How to Use
 
-### Evaluate a job posting
-1. Open the app at `http://localhost:5173`
-2. Paste a full job posting into the text area
-3. Click **Evaluate** — Claude assesses fit and returns:
-   - **Fit score**: Strong / Moderate / Stretch / Skip
-   - **Recommendation**: Apply / Apply with caution / Skip
-   - **Strengths**: resume elements that match the role
-   - **Gaps**: requirements not covered by the resume
-   - **Verdict**: one-sentence summary
-   - **Real Talk**: subtext analysis that reads beyond the literal job description — infers what the role is actually about, what kind of person the team is looking for, and flags signals like vague urgency, hidden company identity, or unrealistic scope. A second Claude call (LLM-as-judge) verifies the analysis for grounded claims vs. speculation.
-
-### Track your applications
-- Change the status of any role (Applied, Reaching out, Interview scheduled, etc.)
-- Click any card to see the full strengths vs gaps breakdown
-- Delete roles you no longer want to track
-
-### Export / Import
-- **Export CSV**: Downloads all tracked roles as a `.csv` file — useful for backups or spreadsheet analysis
-- **Import CSV**: Re-load a previously exported file to restore your tracker
-
-Job data is saved automatically to `data/jobs.json` on your local machine (gitignored).
+Paste a job posting and Claude returns a structured evaluation: fit score, strengths, gaps, verdict, and a subtext analysis (Real Talk) verified by a second LLM-as-judge call. Results are saved locally and exportable as CSV.
 
 ---
 

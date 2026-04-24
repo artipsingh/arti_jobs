@@ -117,13 +117,16 @@ export default defineConfig({
         'src/main.jsx',                    // entry point, not unit testable
         'src/App.jsx',                     // thin shell, covered by E2E
         'src/utils/validatePromptFile.js', // requires gitignored prompt files
+        'src/components/JobCard.jsx',     // covered by E2E
+        'src/components/ErrorBoundary.jsx', // React error boundary reset is unreliable in jsdom — covered by E2E
+        'src/hooks/**',        // covered by E2E
       ],
       reporter: ['text', 'html', 'lcov'],
       thresholds: {
-        lines: 55,
-        functions: 50,
-        branches: 55,
-        statements: 55,
+        lines: 80,
+        functions: 73,
+        branches: 72,
+        statements: 78,
       },
     },
   },

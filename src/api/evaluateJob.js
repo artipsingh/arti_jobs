@@ -2,7 +2,7 @@ import { sanitize } from "../utils/sanitize.js";
 
 export function stripHyperlinks(text) {
   return text
-    .replace(/\[([^\]]+)\]\(https?:\/\/[^\)]+\)/g, "$1") // markdown links: [text](url) → text
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, "$1") // markdown links: [text](url) → text
     .replace(/https?:\/\/\S+/g, "")                       // bare URLs
     .replace(/\s{2,}/g, " ")                              // collapse extra whitespace left behind
     .trim();

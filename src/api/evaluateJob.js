@@ -9,7 +9,12 @@ export function stripHyperlinks(text) {
 }
 
 export async function evaluateJob(posting, systemPrompt) {
-  const { cleanedText } = sanitize(stripHyperlinks(posting));
+  const { cleanedText, rejected } = sanitize(stripHyperlinks(posting));
+
+  if (rejected.length > 0) {
+    throw new Error(rejected[0].message);
+  }
+
   const response = await fetch("/api/anthropic/v1/messages", {
     method: "POST",
     headers: {

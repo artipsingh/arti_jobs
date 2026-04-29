@@ -9,6 +9,43 @@
  *   - message: human-readable warning shown when flagged
  */
 
+/**
+ * Normalize unicode homoglyphs to their ASCII equivalents.
+ *
+ * Attackers can substitute visually identical unicode characters (e.g. Cyrillic
+ * І for Latin I) to bypass keyword-based injection detection. NFKC normalization
+ * resolves compatibility equivalents, and the replace pass catches remaining
+ * common homoglyphs that NFKC does not collapse.
+ */
+export function normalizeUnicode(text) {
+  // NFKC normalization resolves many compatibility characters to ASCII equivalents
+  const normalized = text.normalize("NFKC");
+
+  // Remaining high-frequency homoglyphs not caught by NFKC
+  return normalized
+    .replace(/[Ѐ-ӿ]/g, c => CYRILLIC_MAP[c] ?? c) // Cyrillic → Latin
+    .replace(/​|‌|‍|﻿/g, "");            // strip zero-width chars
+}
+
+const CYRILLIC_MAP = {
+  "А": "A", "а": "a", // А а
+  "В": "B", "в": "b", // В в (looks like B/b)
+  "Е": "E", "е": "e", // Е е
+  "З": "3",                 // З (looks like 3)
+  "И": "N", "и": "n", // И и (looks like N/n mirrored — close enough)
+  "К": "K", "к": "k", // К к
+  "М": "M", "м": "m", // М м
+  "Н": "H", "н": "h", // Н н (looks like H)
+  "О": "O", "о": "o", // О о
+  "Р": "P", "р": "p", // Р р (looks like P/p)
+  "С": "C", "с": "c", // С с
+  "Т": "T", "т": "t", // Т т
+  "У": "Y", "у": "y", // У у (looks like Y/y)
+  "Х": "X", "х": "x", // Х х
+  "І": "I", "і": "i", // І і (Ukrainian — the classic homoglyph)
+};
+
+
 export const SENSITIVE_RULES = [
   {
     category: "email",
@@ -52,6 +89,13 @@ export const SENSITIVE_RULES = [
     replacement: null,
     message: "Posting may contain gender-biased language — review before applying.",
   },
+  {
+    category: "encoded_payload",
+    pattern: /[A-Za-z0-9+/]{40,}={0,2}/g,
+    action: "reject",
+    replacement: null,
+    message: "Possible base64 encoded payload detected. Evaluation rejected — remove encoded content and try again.",
+  },
 ];
 
 /**
@@ -63,23 +107,24 @@ export const SENSITIVE_RULES = [
  *   redacted     — array of categories where content was replaced
  */
 export function sanitize(text) {
-  let cleaned = text;
+  let cleaned = normalizeUnicode(text);
   const flags = [];
   const redacted = [];
+  const rejected = [];
 
   for (const rule of SENSITIVE_RULES) {
     const hasMatch = rule.pattern.test(cleaned);
-    rule.pattern.lastIndex = 0; // reset stateful regex
+    rule.pattern.lastIndex = 0;
 
     if (!hasMatch) continue;
 
-    if (rule.action === "redact" || rule.action === "strip") {
+    if (rule.action === "reject") {
+      rejected.push({ category: rule.category, message: rule.message });
+    } else if (rule.action === "redact" || rule.action === "strip") {
       cleaned = cleaned.replace(rule.pattern, rule.replacement);
       rule.pattern.lastIndex = 0;
       redacted.push({ category: rule.category, message: rule.message });
-    }
-
-    if (rule.action === "flag") {
+    } else if (rule.action === "flag") {
       flags.push({ category: rule.category, message: rule.message });
     }
   }
@@ -87,7 +132,7 @@ export function sanitize(text) {
   // Collapse extra whitespace left by strips
   cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
 
-  return { cleanedText: cleaned, flags, redacted };
+  return { cleanedText: cleaned, flags, redacted, rejected };
 }
 
 /**
@@ -95,6 +140,6 @@ export function sanitize(text) {
  * Useful for showing a warning before submitting.
  */
 export function hasSensitiveContent(text) {
-  const { flags, redacted } = sanitize(text);
-  return flags.length > 0 || redacted.length > 0;
+  const { flags, redacted, rejected } = sanitize(text);
+  return flags.length > 0 || redacted.length > 0 || rejected.length > 0;
 }

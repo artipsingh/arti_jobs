@@ -97,33 +97,52 @@ def _build_system_prompt():
     )
 
 
-def call_claude(posting: str) -> JobEvaluation:
-    """Call the Anthropic API and return the parsed JSON evaluation."""
+def call_claude(posting: str, max_retries: int = 3) -> JobEvaluation:
+    """Call the Anthropic API and return the parsed JSON evaluation.
+
+    Retries with exponential backoff on 429 (rate limit) responses.
+    """
+    import time
+
     api_key = _read_api_key()
     if not api_key:
         pytest.skip("VITE_ANTHROPIC_API_KEY not found in .env")
 
-    response = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        },
-        json={
-            "model": "claude-sonnet-4-6",
-            "max_tokens": 1000,
-            "system": _build_system_prompt(),
-            "messages": [
-                {"role": "user", "content": f"Evaluate this job posting for Arti:\n\n<job_posting>\n{posting}\n</job_posting>"}
-            ],
-        },
-        timeout=30,
-    )
-    response.raise_for_status()
-    text = response.json()["content"][0]["text"]
-    clean = re.sub(r"```json|```", "", text).strip()
-    return cast(JobEvaluation, json.loads(clean))
+    for attempt in range(max_retries):
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-sonnet-4-6",
+                "max_tokens": 1000,
+                "system": _build_system_prompt(),
+                "messages": [
+                    {"role": "user", "content": f"Evaluate this job posting for Arti:\n\n<job_posting>\n{posting}\n</job_posting>"}
+                ],
+            },
+            timeout=30,
+        )
+
+        if response.status_code == 429:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            print(f"\n[rate-limit] 429 received — waiting {wait}s before retry {attempt + 1}/{max_retries}")
+            time.sleep(wait)
+            continue
+
+        response.raise_for_status()
+        text = response.json()["content"][0]["text"]
+        clean = re.sub(r"```json|```", "", text).strip()
+        time.sleep(10)  # baseline cooldown between calls to avoid rate limiting
+        # Use raw_decode to grab the first valid JSON object and ignore any
+        # trailing content Claude may have appended after the JSON block
+        obj, _ = json.JSONDecoder().raw_decode(clean)
+        return cast(JobEvaluation, obj)
+
+    pytest.fail(f"API rate limit exceeded after {max_retries} retries. Try again later.")
 
 # ---------------------------------------------------------------------------
 # Fixture data — representative responses used in unit tests

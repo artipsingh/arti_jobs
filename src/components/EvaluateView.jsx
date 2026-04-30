@@ -4,6 +4,10 @@ export function EvaluateView({
   posting, setPosting,
   loading, error,
   evaluationResult, judgeResult,
+  sanitizationFlags = [],
+  cooldown = 0,
+  sessionCount = 0,
+  sessionWarning = false,
   onEvaluate, onAddToTracker, onClear,
   colors,
 }) {
@@ -23,14 +27,37 @@ export function EvaluateView({
         style={{ marginBottom: "16px" }}
       />
 
-      <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
-        <button data-testid="btn-evaluate" className="btn-primary" onClick={onEvaluate} disabled={loading || !posting.trim()}>
-          {loading ? <span className="pulse">evaluating...</span> : "evaluate posting →"}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "8px", alignItems: "center" }}>
+        <button data-testid="btn-evaluate" className="btn-primary" onClick={onEvaluate} disabled={loading || !posting.trim() || cooldown > 0}>
+          {loading ? <span className="pulse">evaluating...</span> : cooldown > 0 ? `wait ${cooldown}s...` : "evaluate posting →"}
         </button>
         {posting && (
           <button data-testid="btn-clear" className="btn-ghost" onClick={onClear}>clear</button>
         )}
+        {sessionCount > 0 && (
+          <span data-testid="session-count" style={{ fontSize: "11px", color: "#475569", marginLeft: "auto" }}>
+            {sessionCount} evaluated this session
+          </span>
+        )}
       </div>
+
+      {sessionWarning && (
+        <div data-testid="session-warning" style={{ background: "#1c1500", border: "1px solid #f59e0b40", borderRadius: "8px", padding: "10px 14px", color: "#fcd34d", fontSize: "12px", marginBottom: "16px", borderLeft: "3px solid #f59e0b" }}>
+          You have evaluated {sessionCount} postings this session. Take a break — each evaluation costs API tokens.
+        </div>
+      )}
+
+      <div style={{ marginBottom: "16px" }} />
+
+      {sanitizationFlags.length > 0 && (
+        <div data-testid="sanitization-flags" style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {sanitizationFlags.map((flag, i) => (
+            <div key={i} data-testid="sanitization-flag" style={{ background: "#1c1500", border: "1px solid #f59e0b40", borderRadius: "8px", padding: "12px 16px", color: "#fcd34d", fontSize: "12px", borderLeft: "3px solid #f59e0b" }}>
+              ⚠ {flag.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <div data-testid="evaluate-error" style={{ background: "#1f0a0a", border: "1px solid #ef444430", borderRadius: "8px", padding: "16px", color: "#fca5a5", fontSize: "12px", marginBottom: "16px" }}>

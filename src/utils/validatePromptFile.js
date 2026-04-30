@@ -36,6 +36,11 @@ const PROMPT_FILE_RULES = [
     message: "contains zero-width or byte-order-mark characters",
   },
   {
+    name: "cyrillic_homoglyphs",
+    pattern: /[\u0400-\u04FF]/,
+    message: "contains Cyrillic characters — possible homoglyph attack substituting Cyrillic for Latin letters",
+  },
+  {
     name: "url_encoding",
     pattern: /%[0-9A-Fa-f]{2}/,
     message: "contains URL-encoded characters (%xx)",

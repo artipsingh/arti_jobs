@@ -9,7 +9,7 @@ export function stripHyperlinks(text) {
 }
 
 export async function evaluateJob(posting, systemPrompt) {
-  const { cleanedText, rejected } = sanitize(stripHyperlinks(posting));
+  const { cleanedText, rejected, flags } = sanitize(stripHyperlinks(posting));
 
   if (rejected.length > 0) {
     throw new Error(rejected[0].message);
@@ -31,5 +31,5 @@ export async function evaluateJob(posting, systemPrompt) {
   const data = await response.json();
   const text = data.content?.find(b => b.type === "text")?.text || "";
   const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  return { ...JSON.parse(clean), _flags: flags };
 }

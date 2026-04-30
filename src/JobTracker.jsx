@@ -139,6 +139,10 @@ export default function JobTracker() {
             error={evaluate.error}
             evaluationResult={evaluate.evaluationResult}
             judgeResult={evaluate.judgeResult}
+            sanitizationFlags={evaluate.sanitizationFlags}
+            cooldown={evaluate.cooldown}
+            sessionCount={evaluate.sessionCount}
+            sessionWarning={evaluate.sessionWarning}
             onEvaluate={evaluate.evaluatePosting}
             onAddToTracker={evaluate.addToTracker}
             onClear={evaluate.clearEvaluate}

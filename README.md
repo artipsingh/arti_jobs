@@ -100,7 +100,7 @@ All three run in CI on every push with no API calls. The live variants call the 
 | Layer | Technology |
 |---|---|
 | Frontend | React + Vite (JavaScript) |
-| AI | Claude API (`claude-sonnet-4-20250514`) |
+| AI | Claude API (`claude-sonnet-4-6`) |
 | API proxy | Vite `configureServer` middleware (avoids CORS, keeps API key server-side) |
 | Persistence | Local `data/jobs.json` via custom Vite plugin endpoints |
 | JS tests | Vitest |
